@@ -31,3 +31,4 @@ C:\Users\nicholas\source\repos\Assistant\obj\Debug\net6.0\refint\Assistant.dll
 C:\Users\nicholas\source\repos\Assistant\obj\Debug\net6.0\Assistant.pdb
 C:\Users\nicholas\source\repos\Assistant\obj\Debug\net6.0\Assistant.genruntimeconfig.cache
 C:\Users\nicholas\source\repos\Assistant\obj\Debug\net6.0\ref\Assistant.dll
+C:\Users\nicholas\source\repos\Assistant\bin\Debug\net6.0\Newtonsoft.Json.dll

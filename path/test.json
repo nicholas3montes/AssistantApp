@@ -1,27 +1,67 @@
 [
   {
-    "id": 1,
-    "pedido": "Item 1",
-    "description": "This is the first item."
+    "pedido": "01",
+    "forma de pagamento": "Cartão",
+    "valor do pedido": "90,50",
+    "entrega": "Retirar balcão",
+    "items": [
+      {
+        "categoria do produto": "Pizza",
+        "item": "Quatro queijos",
+        "quantidade item": 1,
+        "valor item": "36,40"
+      },
+      {
+        "categoria do produto": "Pizza",
+        "item": "Frango c/ catupiry",
+        "quantidade item": 1,
+        "valor item": "42,00"
+      },
+      {
+        "categoria do produto": "Bebida",
+        "item": "Coca-cola",
+        "quantidade item": 1,
+        "valor item": "12,00"
+      }
+    ]
   },
   {
-    "id": 2,
-    "name": "Item 2",
-    "description": "This is the second item."
+    "pedido": "02",
+    "forma de pagamento": "Dinheiro",
+    "valor do pedido": "23,00",
+    "entrega": "Entrega domicílio",
+    "items": [
+      {
+        "categoria do produto": "Hambúrguer",
+        "item": "Cheeseburger",
+        "quantidade item": 1,
+        "valor item": "15,00"
+      },
+      {
+        "categoria do produto": "Bebida",
+        "item": "Água mineral",
+        "quantidade item": 2,
+        "valor item": "4,00"
+      }
+    ]
   },
   {
-    "id": 3,
-    "name": "Item 3",
-    "description": "This is the third item."
-  },
-  {
-    "id": 4,
-    "name": "Item 4",
-    "description": "This is the fourth item."
-  },
-  {
-    "id": 5,
-    "name": "Item 5",
-    "description": "This is the fifth item."
-  }
+    "pedido": "03",
+    "forma de pagamento": "Cartão",
+    "valor do pedido": "32,50",
+    "entrega": "Retirar balcão",
+    "items": [
+      {
+        "categoria do produto": "Sanduíche",
+        "item": "Frango grelhado",
+        "quantidade item": 1,
+        "valor item": "22,50"
+      },
+      {
+        "categoria do produto": "Bebida",
+        "item": "Refrigerante",
+        "quantidade item": 1,
+        "valor item": "10,00"
+      }
+    ]
 ]
