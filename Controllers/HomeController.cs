@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Text;
 using Newtonsoft.Json.Linq;
-using Microsoft.VisualBasic;
-using System.Globalization;
+using Assistant.Models;
 
 namespace Assistant.Controllers
 {
@@ -10,8 +8,8 @@ namespace Assistant.Controllers
     [ApiController]
     public class HomeController : ControllerBase
     {
-        [HttpGet("GetFileContent")]
-        public async Task<IActionResult> GetFileContent()
+        [HttpGet("GetOrdersOfDay")]
+        public async Task<IActionResult> GetOrdersOfDay()
         {
             try
             {
@@ -20,7 +18,38 @@ namespace Assistant.Controllers
                 if (System.IO.File.Exists(filePath))
                 {
                     string fileContent = await System.IO.File.ReadAllTextAsync(filePath);
-                    return Content(fileContent, "application/json");
+
+                    JArray jsonArray = JArray.Parse(fileContent);
+                    List<Order> orders = new List<Order>();
+
+                    foreach (JObject jsonObject in jsonArray)
+                    {
+                        Order order = new Order
+                        {
+                            OrderId = int.Parse(jsonObject["pedido"].ToString()),
+                            PaymentMethod = jsonObject["forma de pagamento"].ToString(),
+                            OrderPrice = decimal.Parse(jsonObject["valor do pedido"].ToString()),
+                            WithdrawalMethod = jsonObject["entrega"].ToString(),
+                            Items = new List<OrderItem>()
+                        };
+
+                        foreach (JObject itemObject in jsonObject["items"])
+                        {
+                            OrderItem orderItem = new OrderItem
+                            {
+                                Category = itemObject["categoria do produto"].ToString(),
+                                Description = itemObject["item"].ToString(),
+                                Quantity = int.Parse(itemObject["quantidade item"].ToString()),
+                                Value = decimal.Parse(itemObject["valor item"].ToString())
+                            };
+
+                            order.Items.Add(orderItem);
+                        }
+
+                        orders.Add(order);
+                    }
+
+                    return Ok(orders);
                 }
                 else
                 {
@@ -32,88 +61,62 @@ namespace Assistant.Controllers
                 return StatusCode(500, $"Internal server error: {ex}");
             }
         }
-        [HttpGet("GetResultOfDay")]
-        public async Task<IActionResult> GetResultOfDay()
+
+        [HttpGet("GetDailyAnalysis")]
+        public async Task<IActionResult> GetDailyAnalysis()
         {
             try
             {
-                string filePath = "path\\test.json";
+                var ordersResponse = await GetOrdersOfDay();
 
-                if (System.IO.File.Exists(filePath))
+                if (ordersResponse is OkObjectResult ordersOkResult)
                 {
-                    string fileContent = await System.IO.File.ReadAllTextAsync(filePath);
-                    var jsonArray = Newtonsoft.Json.JsonConvert.DeserializeObject<JArray>(fileContent);
-                    decimal total_day = 0;
-                    int total_orders_day = 0;
-                    var categoryInfo = new Dictionary<string, (int Count, decimal TotalValue)>();
+                    var orders = ordersOkResult.Value as List<Order>;
+                    decimal totalSales = 0;
+                    int QuantityItems =  0;
+                    Dictionary<string, int> categoryCounts = new Dictionary<string, int>();
+                    Dictionary<string, decimal> categoryTotalSales = new Dictionary<string, decimal>();
 
-                    var paragraphs = new StringBuilder();
-
-                    if (jsonArray != null)
+                    foreach (var order in orders)
                     {
-                        foreach (var item in jsonArray)
+                        totalSales += order.OrderPrice;
+
+                        foreach (var item in order.Items)
                         {
-                            total_orders_day += 1;
-                            var jsonObject = (JObject)item;
+                            string category = item.Category;
+                            int quantity = item.Quantity;
+                            QuantityItems += 1;
+                            decimal itemValue = item.Value;
 
-                            foreach (var property in jsonObject.Properties())
+                            if (!string.IsNullOrEmpty(category))
                             {
-                                if (property.Name == "valor do pedido")
+                                if (categoryCounts.ContainsKey(category))
                                 {
-                                    if (decimal.TryParse(property.Value.ToString(), out decimal parsedValue))
-                                    {
-                                        total_day += parsedValue;
-                                    }
+                                    categoryCounts[category]++;
+                                    categoryTotalSales[category] += itemValue * quantity;
                                 }
-                                else if (property.Name == "items")
+                                else
                                 {
-                                    var itemsArray = (JArray)property.Value;
-
-                                    foreach (var itemObj in itemsArray)
-                                    {
-                                        decimal item_value = 0;
-                                        var itemProperties = (JObject)itemObj;
-
-                                        foreach (var itemProperty in itemProperties.Properties())
-                                        {
-                                            if (itemProperty.Name == "categoria do produto")
-                                            {
-                                                string category = itemProperty.Value.ToString();
-                                                if (categoryInfo.ContainsKey(category))
-                                                {
-                                                    categoryInfo[category] = (
-                                                        Count: categoryInfo[category].Count + 1,
-                                                        TotalValue: categoryInfo[category].TotalValue + item_value
-                                                    );
-                                                }
-                                                else
-                                                {
-                                                    categoryInfo[category] = (Count: 1, TotalValue: item_value);
-                                                }
-                                            }
-                                            else if (itemProperty.Name == "quantidade item" || itemProperty.Name == "valor do pedido")
-                                            {
-                                                // Obter o valor do item e adicioná-lo ao item_value
-                                                if (decimal.TryParse(itemProperty.Value.ToString(), out decimal itemPropertyValue))
-                                                {
-                                                    item_value += itemPropertyValue;
-                                                }
-                                            }
-                                        }
-                                    }
+                                    categoryCounts[category] = 1;
+                                    categoryTotalSales[category] = itemValue * quantity;
                                 }
                             }
                         }
-
-                        foreach (var kvp in categoryInfo)
-                        {
-                            paragraphs.AppendLine($"Categoria: {kvp.Key}, Quantidade: {kvp.Value.Count}, Valor total: {kvp.Value.TotalValue.ToString("C")}");
-                        }
-
-                        paragraphs.AppendLine($"Realizados hoje um total de: {total_orders_day} pedidos com um valor total de: {total_day.ToString("C")}");
                     }
 
-                return Content(paragraphs.ToString(), "text/plain");
+                    var analysis = new
+                    {
+                        TotalDeVendas = totalSales,
+                        QuantidadeDeItems = QuantityItems,
+                        CategoryAnalysis = categoryCounts.Select(pair => new
+                        {
+                            Categoria = pair.Key,
+                            Quantidade = pair.Value,
+                            Total = categoryTotalSales.GetValueOrDefault(pair.Key, 0)
+                        }).ToList()
+                    };
+
+                    return Ok(analysis);
                 }
                 else
                 {
